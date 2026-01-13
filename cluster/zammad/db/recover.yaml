@@ -7,7 +7,7 @@ metadata:
 spec:
   imageName: ghcr.io/cloudnative-pg/postgresql:16.4
   monitoring:
-    enablePodMonitor: true
+    enablePodMonitor: false
   description: Recovery for zammad
   instances: 3
   primaryUpdateStrategy: unsupervised
