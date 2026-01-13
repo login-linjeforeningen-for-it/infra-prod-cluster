@@ -18,12 +18,6 @@ spec:
       timezone: "Europe/Oslo"
   superuserSecret:
     name: authentik-db-credentials
-  bootstrap:
-    recovery:
-      backup:
-        name: authentik-psql-backup-20250909000000
-      recoveryTarget:
-        targetTime: "2025-09-09 15:15:00.00000+02"
 
   backup:
     retentionPolicy: "30d"
@@ -36,20 +30,6 @@ spec:
         secretAccessKey:
           name: authentik-pg-backup
           key: secret
----
-apiVersion: monitoring.coreos.com/v1
-kind: PodMonitor
-metadata:
-  name: authentik-restore-psql-v2
-  namespace: authentik
-  labels:
-    release: prometheus
-spec:
-  podMetricsEndpoints:
-    - port: metrics
-  selector:
-    matchLabels:
-      cnpg.io/cluster: authentik-restore-psql-v2
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: ScheduledBackup
