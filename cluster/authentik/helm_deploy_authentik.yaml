@@ -90,7 +90,7 @@ spec:
           readOnly: true
     authentik:
       email:
-        host: "secure.emailsrvr.com"
+        host: "smtp-relay.google.com"
         port: 465
         username: file:///email-sec/username
         password: file:///email-sec/password
