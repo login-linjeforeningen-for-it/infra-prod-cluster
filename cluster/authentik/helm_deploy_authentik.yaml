@@ -139,13 +139,10 @@ spec:
           nginx.ingress.kubernetes.io/enable-websockets: "true"
           nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
           nginx.ingress.kubernetes.io/proxy-body-size: 100m
-        enabled: true
-        https: true
-        tls:
-          - hosts:
-              - authentik.login.no
-        hosts:
-          - authentik.login.no
+        enabled: false
+        https: false
+        tls: []
+        hosts: []
       pdb:
         enabled: true
         minAvailable: 1
