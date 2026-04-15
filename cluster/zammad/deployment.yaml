@@ -23,7 +23,25 @@ spec:
         secretKey: password
         secretName: zammad-db-credentials
     ingress:
-      enabled: false
+      enabled: true
+      ingressClassName: nginx-external
+      annotations:
+        nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+        nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+        nginx.ingress.kubernetes.io/upgrade-proxy: "true"
+        nginx.ingress.kubernetes.io/enable-websockets: "true"
+        nginx.ingress.kubernetes.io/configuration-snippet: |
+          proxy_hide_header X-Content-Type-Options;
+        nginx.ingress.kubernetes.io/server-snippet: |
+          more_clear_headers 'X-Content-Type-Options';
+      tls:
+        - hosts:
+            - zammad.login.no
+      hosts:
+        - host: zammad.login.no
+          paths:
+            - path: "/"
+              pathType: Prefix
     elasticsearch:
       master:
         replicaCount: 3
