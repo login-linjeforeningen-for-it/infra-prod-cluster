@@ -1,0 +1,131 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: authentik
+
+---
+apiVersion: onepassword.com/v1
+kind: OnePasswordItem
+metadata:
+  name: authentik-ldap-outpost
+  namespace: authentik
+  annotations:
+    operator.1password.io/auto-restart: "true"
+spec:
+  itemPath: "vaults/infra-prod-cluster/items/authentik-ldap-outpost"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: do-infra-prod-ldap-outpost
+  namespace: authentik
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: authentik-ldap-outpost
+    goauthentik.io/outpost-name: do-infra-prod-ldap-outpost
+  ports:
+    - name: ldap
+      port: 389
+      targetPort: 3389
+      protocol: TCP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: do-infra-prod-ldap-outpost
+  namespace: authentik
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: authentik-ldap-outpost
+      goauthentik.io/outpost-name: do-infra-prod-ldap-outpost
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: authentik-ldap-outpost
+        goauthentik.io/outpost-name: do-infra-prod-ldap-outpost
+    spec:
+      containers:
+        - name: ldap-outpost
+          image: ghcr.io/goauthentik/ldap:2025.2.4
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: ldap
+              containerPort: 3389
+              protocol: TCP
+          env:
+            - name: AUTHENTIK_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-ldap-outpost
+                  key: host
+            - name: AUTHENTIK_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: authentik-ldap-outpost
+                  key: token
+            - name: AUTHENTIK_INSECURE
+              value: "true"
+          readinessProbe:
+            tcpSocket:
+              port: ldap
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: ldap
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ldap-outpost
+  namespace: authentik
+spec:
+  podSelector:
+    matchLabels:
+      goauthentik.io/outpost-name: do-infra-prod-ldap-outpost
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: zammad
+      ports:
+        - protocol: TCP
+          port: 3389
+        - protocol: TCP
+          port: 389
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
